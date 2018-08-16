@@ -59,7 +59,7 @@ def get_dicts(data_path, save_path, filename):
 
     save_data(datas, save_path, filename)
 
-def read_data(data_path, dicts):
+def read_data(data_path, dicts, max_length):
     char2id, pos2id, tag2id = dicts
     
     text = open(data_path, encoding='utf-8').readlines()    
@@ -72,7 +72,6 @@ def read_data(data_path, dicts):
         char.append(arrays[:, 0])
         pos.append(arrays[:, 1])
         tag.append(arrays[:, 2])
-    max_length = 200
     print('Starting transform...')
 
     data_char = list(map(lambda x: transform(x, char2id, max_length), char))
@@ -85,7 +84,7 @@ def read_data(data_path, dicts):
     
     return data_char, data_pos, data_tag
 
-def save_datas(dict_path, train_data_path, dev_data_path, test_data_path):
+def save_datas(dict_path, max_length, train_data_path, dev_data_path, test_data_path):
     
     with open(dict_path, 'rb') as f:
         char2id = pickle.load(f)
@@ -96,9 +95,9 @@ def save_datas(dict_path, train_data_path, dev_data_path, test_data_path):
         id2tag  = pickle.load(f)
     dicts = [char2id, pos2id, tag2id]
 
-    train_data_char, train_data_pos, train_data_tag = read_data(train_data_path, dicts) 
-    dev_data_char, dev_data_pos, dev_data_tag = read_data(dev_data_path, dicts) 
-    test_data_char, test_data_pos, test_data_tag = read_data(test_data_path, dicts) 
+    train_data_char, train_data_pos, train_data_tag = read_data(train_data_path, dicts, max_length) 
+    dev_data_char, dev_data_pos, dev_data_tag = read_data(dev_data_path, dicts, max_length) 
+    test_data_char, test_data_pos, test_data_tag = read_data(test_data_path, dicts, max_length) 
 
     
     datas = [   train_data_char,    dev_data_char,  test_data_char,
@@ -111,6 +110,7 @@ def save_datas(dict_path, train_data_path, dev_data_path, test_data_path):
 if __name__ == '__main__':
     get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
     data_dir = 'data/input/'
-    save_datas('data/dict.pkl', data_dir+'train_seq.txt',
+    max_length = 200
+    save_datas('data/dict.pkl', max_length, data_dir+'train_seq.txt',
                                 data_dir+'dev_seq.txt',
                                 data_dir+'test_seq.txt')
