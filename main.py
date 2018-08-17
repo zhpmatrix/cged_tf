@@ -1,11 +1,12 @@
 import argparse
-import tensorflow as tf
 import pickle
 import math
 import numpy as np
-from sklearn.model_selection import train_test_split
+import tensorflow as tf
 from os.path import join
-
+from itertools import chain
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
 FLAGS = None
 tf.set_random_seed(-1)
@@ -78,7 +79,7 @@ def lstm_cell(num_units, keep_prob=0.5):
     return tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=keep_prob)
 
 
-def main():
+def do():
     # Load data
     train_data_char, dev_data_char, test_data_char, char2id, id2char,train_data_pos, dev_data_pos, test_data_pos,pos2id, id2pos,train_data_tag, dev_data_tag, test_data_tag,tag2id, id2tag = load_data()
       
@@ -89,7 +90,7 @@ def main():
     train_y = train_data_tag
     dev_y   = dev_data_tag
     test_y  = test_data_tag
-
+    
     # Steps
     train_steps = math.ceil(train_x.shape[0] / FLAGS.train_batch_size)
     dev_steps = math.ceil(dev_x.shape[0] / FLAGS.dev_batch_size)
@@ -123,7 +124,8 @@ def main():
     
     # Embedding Layer
     with tf.variable_scope('embedding'):
-        embedding = tf.Variable(tf.random_normal([vocab_size, FLAGS.embedding_size]), dtype=tf.float32)
+        #embedding = tf.Variable(tf.random_normal([vocab_size, FLAGS.embedding_size]), dtype=tf.float32)
+        embedding = tf.Variable(tf.truncated_normal([vocab_size, FLAGS.embedding_size]), dtype=tf.float32)
     inputs = tf.nn.embedding_lookup(embedding, x)
     # Variables
     keep_prob = tf.placeholder(tf.float32, [])
@@ -203,8 +205,6 @@ def main():
                 smrs, loss, acc, gstep, _ = sess.run([summaries, cross_entropy, accuracy, global_step, train],
                                                      feed_dict={keep_prob: FLAGS.keep_prob})
                 
-                #import pdb
-                #pdb.set_trace()
                 # Print log
                 if step % FLAGS.steps_per_print == 0:
                     print('Global Step', gstep, 'Step', step, 'Train Loss', loss, 'Accuracy', acc)
@@ -217,9 +217,18 @@ def main():
             if epoch % FLAGS.epochs_per_dev == 0:
                 # Dev
                 sess.run(dev_initializer)
+                
+                Y_pred = []
+                Y_true = []
+                
                 for step in range(int(dev_steps)):
-                    if step % FLAGS.steps_per_print == 0:
-                        print('Dev Accuracy', sess.run(accuracy, feed_dict={keep_prob: 1}), 'Step', step)
+                    y_predict_results, acc = sess.run([y_predict, accuracy], feed_dict={keep_prob: 1})
+                    Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
+                    #print('Dev Accuracy', sess.run(accuracy, feed_dict={keep_prob: 1}), 'Step', step)
+                # Y_true 
+                dev_y_ = dev_y.tolist()
+                Y_true = id2tag[ list( chain( *dev_y_ ))].tolist()
+                print(classification_report(Y_true, Y_pred))
             
             # Save model
             if epoch % FLAGS.epochs_per_save == 0:
@@ -232,27 +241,41 @@ def main():
         print('Restore from', ckpt.model_checkpoint_path)
         sess.run(test_initializer)
         
+
+        Y_pred = []
+        Y_true = []
+        
         for step in range(int(test_steps)):
             x_results, y_predict_results, acc = sess.run([x, y_predict, accuracy], feed_dict={keep_prob: 1})
             print('Test step', step, 'Accuracy', acc)
+            
+            #Y_test
+            Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
+        
+            
             y_predict_results = np.reshape(y_predict_results, x_results.shape)
             for i in range(len(x_results)):
-                x_result, y_predict_result = list(filter(lambda x: x, x_results[i])), list(
-                    filter(lambda x: x, y_predict_results[i]))
-                x_text, y_predict_text = ''.join(id2char[x_result].values), ''.join(id2tag[y_predict_result].values)
-                print(x_text, y_predict_text)
+               x_result, y_predict_result = list(filter(lambda x: x, x_results[i])), list(
+                   filter(lambda x: x, y_predict_results[i]))
+               x_text, y_predict_text = ''.join(id2char[x_result].values), ''.join(id2tag[y_predict_result].values)
+               print(x_text, y_predict_text)
 
+        #Y_true 
+        test_y_ = test_y.tolist()
+        Y_true = id2tag[ list( chain( *test_y_ ))].tolist()
+        
+        print(classification_report(Y_true, Y_pred))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BI LSTM')
-    parser.add_argument('--train_batch_size', help='train batch size', default=50)
-    parser.add_argument('--dev_batch_size', help='dev batch size', default=50)
-    parser.add_argument('--test_batch_size', help='test batch size', default=500)
+    parser.add_argument('--train_batch_size', help='train batch size', default=256)
+    parser.add_argument('--dev_batch_size', help='dev batch size', default=64)
+    parser.add_argument('--test_batch_size', help='test batch size', default=64)
     parser.add_argument('--dict_path', help='dict path', default='./data/dict.pkl')
     parser.add_argument('--data_path', help='data path', default='./data/data.pkl')
     parser.add_argument('--num_layer', help='num of layer', default=2, type=int)
-    parser.add_argument('--num_units', help='num of units', default=64, type=int)
-    parser.add_argument('--time_step', help='time steps', default=64, type=int)
+    parser.add_argument('--num_units', help='num of units', default=10, type=int)
+    parser.add_argument('--time_step', help='time steps', default=200, type=int)
     parser.add_argument('--embedding_size', help='embedding size', default=64, type=int)
     parser.add_argument('--category_num', help='category num', default=10, type=int)
     parser.add_argument('--learning_rate', help='learning rate', default=0.001, type=float)
@@ -269,4 +292,4 @@ if __name__ == '__main__':
     
     FLAGS, args = parser.parse_known_args()
     
-    main()
+    do()
