@@ -1,8 +1,10 @@
+import os
 import argparse
 import pickle
 import math
 import numpy as np
 import tensorflow as tf
+
 from os.path import join
 from itertools import chain
 from sklearn.model_selection import train_test_split
@@ -170,8 +172,7 @@ def do():
     print('Prediction', correct_prediction, 'Accuracy', accuracy)
     
     # Loss
-    cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_label_reshape,
-                                                                                  logits=tf.cast(y, tf.float32)))
+    cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_label_reshape,logits=tf.cast(y, tf.float32)))
     tf.summary.scalar('loss', cross_entropy)
     
     # Train
@@ -189,21 +190,18 @@ def do():
     
     # Summaries
     summaries = tf.summary.merge_all()
-    writer = tf.summary.FileWriter(join(FLAGS.summaries_dir, 'train'),
-                                   sess.graph)
-    
+    writer = tf.summary.FileWriter(FLAGS.summaries_dir,sess.graph)
     if FLAGS.train:
         
-        if tf.gfile.Exists(FLAGS.summaries_dir):
-            tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
+        #if tf.gfile.Exists(FLAGS.summaries_dir):
+        #    tf.gfile.DeleteRecursively(FLAGS.summaries_dir)
         
         for epoch in range(FLAGS.epoch_num):
             tf.train.global_step(sess, global_step_tensor=global_step)
             # Train
             sess.run(train_initializer)
             for step in range(int(train_steps)):
-                smrs, loss, acc, gstep, _ = sess.run([summaries, cross_entropy, accuracy, global_step, train],
-                                                     feed_dict={keep_prob: FLAGS.keep_prob})
+                smrs, loss, acc, gstep, _ = sess.run([summaries, cross_entropy, accuracy, global_step, train],feed_dict={keep_prob: FLAGS.keep_prob})
                 
                 # Print log
                 if step % FLAGS.steps_per_print == 0:
@@ -211,6 +209,8 @@ def do():
                 
                 # Summaries for tensorboard
                 if gstep % FLAGS.steps_per_summary == 0:
+                    if not os.path.exists(FLAGS.summaries_dir):
+                        os.mkdir(FLAGS.summaries_dir)
                     writer.add_summary(smrs, gstep)
                     print('Write summaries to', FLAGS.summaries_dir)
             
@@ -267,12 +267,13 @@ def do():
         print(classification_report(Y_true, Y_pred))
 
 if __name__ == '__main__':
+    
     parser = argparse.ArgumentParser(description='BI LSTM')
     parser.add_argument('--train_batch_size', help='train batch size', default=256)
     parser.add_argument('--dev_batch_size', help='dev batch size', default=64)
     parser.add_argument('--test_batch_size', help='test batch size', default=64)
-    parser.add_argument('--dict_path', help='dict path', default='./data/dict.pkl')
-    parser.add_argument('--data_path', help='data path', default='./data/data.pkl')
+    parser.add_argument('--dict_path', help='dict path', default='data/dict.pkl')
+    parser.add_argument('--data_path', help='data path', default='data/data.pkl')
     parser.add_argument('--num_layer', help='num of layer', default=2, type=int)
     parser.add_argument('--num_units', help='num of units', default=10, type=int)
     parser.add_argument('--time_step', help='time steps', default=200, type=int)
@@ -284,11 +285,11 @@ if __name__ == '__main__':
     parser.add_argument('--epochs_per_dev', help='epochs per dev', default=2, type=int)
     parser.add_argument('--epochs_per_save', help='epochs per save', default=2, type=int)
     parser.add_argument('--steps_per_print', help='steps per print', default=10, type=int)
-    parser.add_argument('--steps_per_summary', help='steps per summary', default=100, type=int)
+    parser.add_argument('--steps_per_summary', help='steps per summary', default=5, type=int)
     parser.add_argument('--keep_prob', help='train keep prob dropout', default=0.5, type=float)
     parser.add_argument('--checkpoint_dir', help='checkpoint dir', default='ckpt/model.ckpt', type=str)
     parser.add_argument('--summaries_dir', help='summaries dir', default='summaries/', type=str)
-    parser.add_argument('--train', help='train', default=False, type=bool)
+    parser.add_argument('--train', help='train', default=True, type=bool)
     
     FLAGS, args = parser.parse_known_args()
     
