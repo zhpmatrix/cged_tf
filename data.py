@@ -59,6 +59,43 @@ def get_dicts(data_path, save_path, filename):
 
     save_data(datas, save_path, filename)
 
+def merge_test(test_input_path, test_truth_path, testset_path):
+    input_ = open(test_input_path, encoding='utf-8').readlines()
+    input_dict = {}
+    for i,sentence in enumerate(input_):
+        sid = re.findall('sid=(.*?)\)\t', sentence)[0]
+        doc = re.findall('\t(.*?)\n', sentence)[0]
+        input_dict[sid] = doc
+    
+    truth = open(test_truth_path, encoding='utf-8').readlines()
+    truth_dict = {}
+    for i,sentence in enumerate(truth):
+        row  = sentence.split(',') 
+        sid = row[0]
+        tag = []
+        for i in range(1,len(row)):
+            tag.append(row[i].strip())
+        
+        if sid not in truth_dict.keys():
+            values = []
+            values.append(tag)
+            truth_dict[sid] = values
+        else:
+            truth_dict[sid].append(tag)
+
+    with open(testset_path, 'a') as f:
+        for key, value in input_dict.items():
+            tags = truth_dict[key]
+            if len(tags[0]) != 1:# Filter correct
+                f.write('<DOC>\n')
+                f.write('<TEXT id="'+key+'">\n')
+                f.write(value+'\n')
+                f.write('</TEXT>\n')
+                for tag in tags:
+                    start_off, end_off, type_ = tag
+                    f.write('<ERROR'+' start_off="'+start_off+'" end_off="'+end_off+'" type="'+type_+'"></ERROR>\n')
+                f.write('</DOC>\n')
+    print('Done!')
 def read_data(data_path, dicts, max_length):
     char2id, pos2id, tag2id = dicts
     
@@ -108,7 +145,11 @@ def save_datas(dict_path, max_length, train_data_path, dev_data_path, test_data_
     save_data(datas, 'data/', 'data.pkl')
 
 if __name__ == '__main__':
-    get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
+    
+    #merge_test('data/raw/CGED16_HSK_Test_Input.txt', 'data/raw/CGED16_HSK_Test_Truth.txt','data/raw/CGED16_HSK_TestSet.xml')
+
+    #get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
+    
     data_dir = 'data/input/'
     max_length = 200
     save_datas('data/dict.pkl', max_length, data_dir+'train_seq.txt',
