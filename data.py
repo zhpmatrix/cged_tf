@@ -31,21 +31,42 @@ def save_data(datas, path, filename):
             pickle.dump(data, f)
     print('Pickle finished')
 
+def get_word(char):
+    char_list = char.tolist()
+    char_list.insert(0, '<SOS>')
+    char_list.append('<EOS>')
+    bigram_list = [''.join([char_list[i], char_list[i+1]]) for i in range(len(char_list)-1)]
+    return np.array(bigram_list)
+
+def get_word_old(char):
+    char_list = char.tolist()
+    char_list.insert(0, '<SOS>')
+    bigram_list = [''.join([char_list[i], char_list[i+1]]) for i in range(len(char_list)-1)]
+    return np.array(bigram_list)
+
+def get_word_cur(char):
+    char_list = char.tolist()
+    char_list.append('<EOS>')
+    bigram_list = [''.join([char_list[i], char_list[i+1]]) for i in range(len(char_list)-1)]
+    return np.array(bigram_list)
+
+
 def get_dicts(data_path, save_path, filename):
     
     text = open(data_path, encoding='utf-8').readlines()
 
     # To numpy array
-    char, pos, tag  = [], [], []
+    char, word, pos, tag= [], [], [], []
     print('Start creating chars, pos and tags...')
     for i,sentence in enumerate(text):
         groups = re.findall('(.)&(.-.)&(.-.|.)', sentence)
         arrays = np.asarray(groups)
         char.append(arrays[:, 0])
+        word.append(get_word(arrays[:, 0]))
         pos.append(arrays[:, 1])
         tag.append(arrays[:, 2])
-
-    # Char, pos, tag set and ids
+    
+    word2id, id2word = get_dict(word)
     char2id, id2char = get_dict(char)
     pos2id, id2pos = get_dict(pos)
     tags_set = ['X', 'O','B-R', 'I-R', 'B-M', 'I-M', 'B-S', 'I-S', 'B-W', 'I-W']
@@ -55,7 +76,7 @@ def get_dicts(data_path, save_path, filename):
     tag2id = pd.Series(tags_ids, index=tags_set)
     id2tag = pd.Series(tags_set, index=tag2id)
     
-    datas = [char2id, id2char, pos2id,  id2pos, tag2id, id2tag]
+    datas = [char2id, id2char, pos2id,  id2pos, word2id, id2word, tag2id, id2tag]
 
     save_data(datas, save_path, filename)
 
@@ -96,30 +117,40 @@ def merge_test(test_input_path, test_truth_path, testset_path):
                     f.write('<ERROR'+' start_off="'+start_off+'" end_off="'+end_off+'" type="'+type_+'"></ERROR>\n')
                 f.write('</DOC>\n')
     print('Done!')
+
 def read_data(data_path, dicts, max_length):
-    char2id, pos2id, tag2id = dicts
+    char2id, pos2id, word2id, tag2id = dicts
     
     text = open(data_path, encoding='utf-8').readlines()    
     # To numpy array
-    char, pos, tag  = [], [], []
+    char, word_old, word_cur, pos, tag = [], [], [], [], []
+
     print('Start creating chars, pos and tags...')
     for i,sentence in enumerate(text):
         groups = re.findall('(.)&(.-.)&(.-.|.)', sentence)
         arrays = np.asarray(groups)
         char.append(arrays[:, 0])
+        word_old.append(get_word_old(arrays[:, 0]))
+        word_cur.append(get_word_cur(arrays[:, 0]))
         pos.append(arrays[:, 1])
         tag.append(arrays[:, 2])
     print('Starting transform...')
 
     data_char = list(map(lambda x: transform(x, char2id, max_length), char))
+    data_word_old = list(map(lambda x: transform(x, word2id, max_length), word_old))
+    data_word_cur = list(map(lambda x: transform(x, word2id, max_length), word_cur))
+    
     data_pos = list(map(lambda x: transform(x, pos2id, max_length), pos))
     data_tag = list(map(lambda x: transform(x, tag2id, max_length), tag))
     
     data_char = np.asarray(data_char)
+    data_word_old = np.asarray(data_word_old)
+    data_word_cur = np.asarray(data_word_cur)
+
     data_pos = np.asarray(data_pos)
     data_tag = np.asarray(data_tag)
     
-    return data_char, data_pos, data_tag
+    return data_char, data_word_old, data_word_cur, data_pos, data_tag
 
 def save_datas(dict_path, max_length, train_data_path, dev_data_path, test_data_path):
     
@@ -128,18 +159,22 @@ def save_datas(dict_path, max_length, train_data_path, dev_data_path, test_data_
         id2char = pickle.load(f)
         pos2id  = pickle.load(f)
         id2pos  = pickle.load(f)
+        word2id = pickle.load(f)
+        id2word = pickle.load(f)
         tag2id  = pickle.load(f)
         id2tag  = pickle.load(f)
-    dicts = [char2id, pos2id, tag2id]
+    dicts = [char2id, pos2id, word2id, tag2id]
 
-    train_data_char, train_data_pos, train_data_tag = read_data(train_data_path, dicts, max_length) 
-    dev_data_char, dev_data_pos, dev_data_tag = read_data(dev_data_path, dicts, max_length) 
-    test_data_char, test_data_pos, test_data_tag = read_data(test_data_path, dicts, max_length) 
+    train_data_char, train_data_word_old, train_data_word_cur, train_data_pos, train_data_tag = read_data(train_data_path, dicts, max_length) 
+    dev_data_char, dev_data_word_old, dev_data_word_cur, dev_data_pos, dev_data_tag = read_data(dev_data_path, dicts, max_length) 
+    test_data_char, test_data_word_old, test_data_word_cur, test_data_pos, test_data_tag = read_data(test_data_path, dicts, max_length) 
 
     
-    datas = [   train_data_char,    dev_data_char,  test_data_char,
-                train_data_pos,     dev_data_pos,   test_data_pos,
-                train_data_tag,     dev_data_tag,   test_data_tag
+    datas = [   train_data_char,        dev_data_char,      test_data_char,
+                train_data_word_old,    dev_data_word_old,  test_data_word_old,
+                train_data_word_cur,    dev_data_word_cur,  test_data_word_cur,
+                train_data_pos,         dev_data_pos,       test_data_pos,
+                train_data_tag,         dev_data_tag,       test_data_tag
             ]
 
     save_data(datas, 'data/', 'data.pkl')
@@ -149,6 +184,7 @@ if __name__ == '__main__':
     #merge_test('data/raw/CGED16_HSK_Test_Input.txt', 'data/raw/CGED16_HSK_Test_Truth.txt','data/raw/CGED16_HSK_TestSet.xml')
 
     #get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
+    #exit()  
     
     data_dir = 'data/input/'
     max_length = 200
