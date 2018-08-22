@@ -235,16 +235,18 @@ def do(seq):
     
     Y_pred = []
     for step in range(int(test_steps)):# test_steps equals 1
-        x_results, _, _, _, y_predict_results= sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict], feed_dict={keep_prob: 1})
+        x_rst, _, _, _, y_pred_rst= sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict], feed_dict={keep_prob: 1})
         # Get Y_pred
-        Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
-        # Filter padding    
-        y_predict_results = np.reshape(y_predict_results, x_results.shape)
-        x_result, y_predict_result = list(filter(lambda x: x, x_results[0])), list(filter(lambda x: x, y_predict_results[0]))
-        x_text, y_predict_text = id2char[x_result].tolist(), id2tag[y_predict_result].tolist()
-        print(x_text, y_predict_text)
-        print(len(x_text), len(y_predict_text))
-        result = y_predict_text
+        Y_pred.extend( id2tag[y_pred_rst.tolist()].tolist() )
+        
+		# Filter padding    
+        #y_pred_ = np.reshape(y_pred_rst, x_rst.shape)
+        #x_rst_, y_pred_rst_ = list(filter(lambda x: x, x_rst[0])), list(filter(lambda x: x, y_pred_rst[0]))
+        
+        seq_len = len(seq)
+        x_text = id2char[x_rst[0]].tolist()[:seq_len]
+        y_pred_text = id2tag[y_pred_rst].tolist()[:seq_len]
+        result = y_pred_text
 	
     return result
 

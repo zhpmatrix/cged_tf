@@ -30,6 +30,9 @@ def inference(data):
 	# Log
     print('Seq: ',seq)
     print('Tag: ', tag)
+    
+	#import pdb
+    #pdb.set_trace()
 	
 	# Merge data
     for i in range(len(seq)):
