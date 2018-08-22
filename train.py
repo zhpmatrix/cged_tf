@@ -112,7 +112,7 @@ def do():
     train_x_word_old = train_data_word_old
     dev_x_word_old   = dev_data_word_old
     test_x_word_old  = test_data_word_old
-    
+     
     # Word(cur)
     train_x_word_cur = train_data_word_cur
     dev_x_word_cur   = dev_data_word_cur
@@ -295,19 +295,17 @@ def do():
         Y_true = []
         
         for step in range(int(test_steps)):
-            x_results, _, _, _, y_predict_results, acc = sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict, accuracy], feed_dict={keep_prob: 1})
+            x_results, x_pos_, x_word_old_, x_word_cur_, y_predict_results, acc = sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict, accuracy], feed_dict={keep_prob: 1})
             print('Test step', step, 'Accuracy', acc)
-            
             #Y_test
             Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
         
             
             y_predict_results = np.reshape(y_predict_results, x_results.shape)
             for i in range(len(x_results)):
-               x_result, y_predict_result = list(filter(lambda x: x, x_results[i])), list(
-                   filter(lambda x: x, y_predict_results[i]))
-               x_text, y_predict_text = ''.join(id2char[x_result].values), ''.join(id2tag[y_predict_result].values)
-               print(x_text, y_predict_text)
+               x_text = id2char[x_results[i]].tolist()
+               y_predict_text = id2tag[y_predict_results[i]].tolist()
+               print(x_text[:20], y_predict_text[:20])
 
         #Y_true 
         test_y_ = test_y.tolist()
@@ -320,7 +318,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='BI LSTM')
     parser.add_argument('--train_batch_size', help='train batch size', default=256)
     parser.add_argument('--dev_batch_size', help='dev batch size', default=64)
-    parser.add_argument('--test_batch_size', help='test batch size', default=64)
+    parser.add_argument('--test_batch_size', help='test batch size', default=256)
     parser.add_argument('--dict_path', help='dict path', default='data/dict.pkl')
     parser.add_argument('--data_path', help='data path', default='data/data.pkl')
     parser.add_argument('--num_layer', help='num of layer', default=1, type=int)
@@ -340,7 +338,7 @@ if __name__ == '__main__':
     parser.add_argument('--keep_prob', help='train keep prob dropout', default=0.5, type=float)
     parser.add_argument('--checkpoint_dir', help='checkpoint dir', default='ckpt/model.ckpt', type=str)
     parser.add_argument('--summaries_dir', help='summaries dir', default='summaries/', type=str)
-    parser.add_argument('--train', help='train', default=True, type=bool)
+    parser.add_argument('--train', help='train', default=False, type=bool)
     
     FLAGS, args = parser.parse_known_args()
     

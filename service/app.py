@@ -20,7 +20,6 @@ def inference(data):
 
     # Convert data to list
     seq = list(data)
-    
 	# Predict
     tag = predict(data)
 

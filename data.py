@@ -195,8 +195,8 @@ if __name__ == '__main__':
     
     #merge_test('data/raw/CGED16_HSK_Test_Input.txt', 'data/raw/CGED16_HSK_Test_Truth.txt','data/raw/CGED16_HSK_TestSet.xml')
 
-    get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
-    exit()  
+    #get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
+    #exit()  
     
     data_dir = 'data/input/'
     max_length = 200

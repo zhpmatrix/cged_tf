@@ -107,7 +107,7 @@ def lstm_cell(num_units, keep_prob=0.5):
 def get_array_input(seq, max_len):
     char, pos, word_old, word_cur     = get_raw_input(seq)
     
-    char2id, id2char, pos2id, _, word2id, _, _, id2tag = load_dict()
+    char2id, id2char, pos2id, id2pos, word2id, id2word, tag2id, id2tag = load_dict()
     
 	# If can not find key, padding with index equals 0
     test_x_char 	= [char2id[ch] if ch in char2id else 0 for ch in char]
@@ -120,27 +120,12 @@ def get_array_input(seq, max_len):
     [test_data.extend([0 for i in range(max_len - len(test_data))]) for test_data in [test_x_char, test_x_pos, test_word_old, test_word_cur] if len(test_data) < max_len]
     
 	# List to ndarray
-    return np.array([test_x_char]), np.array([test_x_pos]), np.array([test_word_old]), np.array([test_word_cur]), char2id, id2char, pos2id, word2id, id2tag
+    return np.array([test_x_char]), np.array([test_x_pos]), np.array([test_word_old]), np.array([test_word_cur]), char2id, id2char, pos2id, id2pos, word2id, id2word, tag2id, id2tag
 
 def do(seq):
     # Load data
     #train_data_char, dev_data_char, test_data_char, char2id, id2char,train_data_word_old, dev_data_word_old, test_data_word_old, train_data_word_cur, dev_data_word_cur, test_data_word_cur, word2id, id2word, train_data_pos, dev_data_pos, test_data_pos,pos2id, id2pos,train_data_tag, dev_data_tag, test_data_tag,tag2id, id2tag = load_data()
-    test_x_char, test_x_pos, test_x_word_old, test_x_word_cur,char2id, id2char, pos2id, word2id, id2tag = get_array_input(seq, FLAGS.time_step) 
-#	# Char
-#    test_x_char  = test_data_char[0]
-#    test_x_char = test_x_char.reshape((1, test_x_char.shape[0])) 
-#    
-#    # Pos
-#    test_x_pos  = test_data_pos[0]
-#    test_x_pos = test_x_pos.reshape((1, test_x_pos.shape[0])) 
-#    
-#    # Word(old)
-#    test_x_word_old  = test_data_word_old[0]
-#    test_x_word_old = test_x_word_old.reshape((1, test_x_word_old.shape[0])) 
-#    
-#    # Word(cur)
-#    test_x_word_cur  = test_data_word_cur[0]
-#    test_x_word_cur = test_x_word_cur.reshape((1, test_x_word_cur.shape[0])) 
+    test_x_char, test_x_pos, test_x_word_old, test_x_word_cur,char2id, id2char, pos2id, id2pos, word2id, id2word,  tag2id, id2tag = get_array_input(seq, FLAGS.time_step) 
     
 
     
@@ -235,7 +220,7 @@ def do(seq):
     
     Y_pred = []
     for step in range(int(test_steps)):# test_steps equals 1
-        x_rst, _, _, _, y_pred_rst= sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict], feed_dict={keep_prob: 1})
+        x_rst, x_pos_, x_word_old_, x_word_cur_, y_pred_rst= sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict], feed_dict={keep_prob: 1})
         # Get Y_pred
         Y_pred.extend( id2tag[y_pred_rst.tolist()].tolist() )
         
@@ -264,5 +249,5 @@ def predict(seq):
 	result = do(seq)
 	return result
 if __name__ == '__main__':
-    seq = 'xiaoming，从开始每个人都有理想的工作有的想当医生明星运动员老师等等却有很少孩子想当商人！'
+    seq = '年轻人觉得人生是自己满足的别人不能管'
     print(predict(seq))	
