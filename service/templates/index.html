@@ -1,0 +1,53 @@
+<html>
+    <head>
+        <title>Grammatical Diagnose</title>
+        <style type="text/css">
+
+	/*主面板样式*/
+	#container {
+	width:980px;
+	margin:0px auto;/*主面板DIV居中*/
+	}
+	/*顶部面板样式*/
+	#input {
+	width:100%;
+	height:300px;
+	border:1px #000000;
+	}
+	/*中间部分面板样式*/
+	#output {
+	width:100%;
+	height:300px;
+	border:1px #000000 solid;
+	}
+    </style>
+    </head>
+    <body>
+         <div id='container'>
+	<div id='output'>
+	{% for elem in data  %}
+	    {% if elem.tag == 'R'  %}
+	    	<font color='red'>{{ elem.seq }}</font>
+            {% elif elem.tag == 'M'  %}
+	    	<font color='green'>{{ elem.seq }}</font>
+            {% elif elem.tag == 'S' %}
+	    	<font color='yellow'>{{ elem.seq }}</font>
+            {% elif elem.tag == 'W'  %}
+	    	<font color='blue'>{{ elem.seq }}</font>
+	    {% else %}
+	    	<font color='black'>{{ elem.seq }}</font>
+	    {% endif %}
+        {% endfor %}
+
+	</div>
+	<br>
+	 <div id='input'>
+	 <form method="POST">
+	    {{ form.hidden_tag() }}
+	    {{ form.name(rows=19,cols=100) }}{{ form.submit() }}
+        </form>
+	</div>
+	</div>
+    </body>
+</html>
+

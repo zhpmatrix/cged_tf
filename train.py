@@ -10,6 +10,7 @@ from itertools import chain
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
+
 FLAGS = None
 tf.set_random_seed(-1)
 
@@ -294,7 +295,7 @@ def do():
         Y_true = []
         
         for step in range(int(test_steps)):
-            x_results, y_predict_results, acc = sess.run([x, y_predict, accuracy], feed_dict={keep_prob: 1})
+            x_results, _, _, _, y_predict_results, acc = sess.run([x_char, x_pos, x_word_old, x_word_cur, y_predict, accuracy], feed_dict={keep_prob: 1})
             print('Test step', step, 'Accuracy', acc)
             
             #Y_test
@@ -339,7 +340,7 @@ if __name__ == '__main__':
     parser.add_argument('--keep_prob', help='train keep prob dropout', default=0.5, type=float)
     parser.add_argument('--checkpoint_dir', help='checkpoint dir', default='ckpt/model.ckpt', type=str)
     parser.add_argument('--summaries_dir', help='summaries dir', default='summaries/', type=str)
-    parser.add_argument('--train', help='train', default=False, type=bool)
+    parser.add_argument('--train', help='train', default=True, type=bool)
     
     FLAGS, args = parser.parse_known_args()
     

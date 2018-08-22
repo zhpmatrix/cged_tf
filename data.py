@@ -66,16 +66,28 @@ def get_dicts(data_path, save_path, filename):
         pos.append(arrays[:, 1])
         tag.append(arrays[:, 2])
     
+    padding = '<UNK>'
     word2id, id2word = get_dict(word)
     char2id, id2char = get_dict(char)
     pos2id, id2pos = get_dict(pos)
-    tags_set = ['X', 'O','B-R', 'I-R', 'B-M', 'I-M', 'B-S', 'I-S', 'B-W', 'I-W']
+    
+	# Padding with <UNK>
+    word2id[padding] = 0
+    id2word[0] = padding
+    char2id[padding] = 0
+    id2char[0] = padding
+    pos2id[padding]  = 0
+    id2pos[0]  =  padding
+
+    tags_set = ['O','B-R', 'I-R', 'B-M', 'I-M', 'B-S', 'I-S', 'B-W', 'I-W']
     #tags_ids = range(1, len(tags_set)+1)
+    tags_set.insert(0, padding)
     tags_ids = range(len(tags_set))
     # Dict to transform
     tag2id = pd.Series(tags_ids, index=tags_set)
     id2tag = pd.Series(tags_set, index=tag2id)
-    
+
+
     datas = [char2id, id2char, pos2id,  id2pos, word2id, id2word, tag2id, id2tag]
 
     save_data(datas, save_path, filename)
@@ -183,8 +195,8 @@ if __name__ == '__main__':
     
     #merge_test('data/raw/CGED16_HSK_Test_Input.txt', 'data/raw/CGED16_HSK_Test_Truth.txt','data/raw/CGED16_HSK_TestSet.xml')
 
-    #get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
-    #exit()  
+    get_dicts('data/input/merge_seq.txt','data/','dict.pkl')
+    exit()  
     
     data_dir = 'data/input/'
     max_length = 200
