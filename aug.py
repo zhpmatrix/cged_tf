@@ -3,8 +3,9 @@ import random
 from pyltp import Segmentor
 
 def data_aug(data_path, save_path, seg_model = '../../../ltp/cws.model', stopwords_path='stopwords.txt'):
+
 	
-	text = open(data_path,'rb').readlines()[:100]
+	text = open(data_path,'rb').readlines()
 	
 	seg = Segmentor()
 	seg.load(seg_model)
@@ -15,8 +16,13 @@ def data_aug(data_path, save_path, seg_model = '../../../ltp/cws.model', stopwor
 	input_dict = {}
 	truth_dict = {}
 	
-	for i, seq in enumerate(text):
-			print(i, seq.decode('utf-8'), len(text))
+	RW_num_ratio = 0.5
+	TEXT_num = len(text)
+	RW_END = int(TEXT_num * RW_num_ratio)
+
+	# R,W augmentation
+	for i, seq in enumerate(text[:RW_END]):
+			print(i, seq.decode('utf-8'), len(text[:RW_END]))
 			tags = []
 
 			seq = seq.decode('utf-8')
@@ -91,19 +97,60 @@ def data_aug(data_path, save_path, seg_model = '../../../ltp/cws.model', stopwor
 	
 			input_dict[i] = seq
 			truth_dict[i] = tags
-	exit()		
+	
+	# M augmentation
+	for i, seq in enumerate(text[RW_END:], start=RW_END):
+			print(i, seq.decode('utf-8'), len(text[RW_END:]))
+			tags = []
+
+			seq = seq.decode('utf-8')
+			seq = seq.replace(' ','').strip()
+			
+			# Keep raw
+			raw = copy.deepcopy(seq)
+			word = seg.segment(seq)
+			
+			M_nums = 3
+			
+			word_list = [i for i in range(len(word))]
+			if len(word_list) < M_nums:
+					continue
+			word_idxs = random.sample(word_list,M_nums)
+			word_idxs = [idx for idx in word_idxs if word[idx] not in stopwords]
+			word_idxs.sort()
+
+			M_tags = []
+			for j in range(len( word_idxs )):
+					if j == 0 and len(word_idxs) > 1:
+						seq = ''.join(word[:word_idxs[j]])
+						start_off , end_off  = len(seq), len(seq) + len(word[word_idxs[j]])
+					elif j == (len(word_idxs) - 1):
+						seq += ''.join(word[ word_idxs[j-1] + 1: word_idxs[j] ])
+						start_off , end_off  = len(seq), len(seq) + len(word[word_idxs[j]])
+						seq += ''.join(word[word_idxs[j]+1:])
+					else:
+						seq += ''.join(word[ word_idxs[j-1] + 1: word_idxs[j] ])
+						start_off , end_off  = len(seq), len(seq) + len(word[word_idxs[j]])
+					M_tags.append([start_off + 1, end_off, 'M'])
+			
+			if len(M_tags) > 0:
+				tags.extend(M_tags)
+	
+			input_dict[i] = seq
+			truth_dict[i] = tags
+	
+	exit()
 	# Write to file	
 	with open(save_path, 'a') as f:
 		for key, value in input_dict.items():
 			tags = truth_dict[key]
-			if len(tags[0]) != 1:# Filter correct
-				f.write('<DOC>\n')
-				f.write('<TEXT id="'+key+'">\n')
-				f.write(value+'\n')
-				f.write('</TEXT>\n')
-				for tag in tags:
-					start_off, end_off, type_ = tag
-					f.write('<ERROR'+' start_off="'+start_off+'" end_off="'+end_off+'" type="'+type_+'"></ERROR>\n')
-				f.write('</DOC>\n')
+			f.write('<DOC>\n')
+			f.write('<TEXT id="'+str(key)+'">\n')
+			f.write(value+'\n')
+			f.write('</TEXT>\n')
+			for tag in tags:
+				start_off, end_off, type_ = tag
+				f.write('<ERROR'+' start_off="'+str(start_off)+'" end_off="'+str(end_off)+'" type="'+str(type_)+'"></ERROR>\n')
+			f.write('</DOC>\n')
 if __name__ == '__main__':
 		data_aug('merge.zh', 'news.xml')
