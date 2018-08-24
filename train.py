@@ -99,31 +99,58 @@ def do():
     train_data_char, dev_data_char, test_data_char, char2id, id2char,train_data_word_old, dev_data_word_old, test_data_word_old, train_data_word_cur, dev_data_word_cur, test_data_word_cur, word2id, id2word, train_data_pos, dev_data_pos, test_data_pos,pos2id, id2pos,train_data_tag, dev_data_tag, test_data_tag,tag2id, id2tag = load_data()
     
     # Char
-    train_x_char = train_data_char
-    dev_x_char   = dev_data_char
+    #train_x_char = train_data_char
+    #dev_x_char   = dev_data_char
+    #test_x_char  = test_data_char
+    #
+    ## Pos
+    #train_x_pos = train_data_pos
+    #dev_x_pos   = dev_data_pos
+    #test_x_pos  = test_data_pos
+    #
+    ## Word(old)
+    #train_x_word_old = train_data_word_old
+    #dev_x_word_old   = dev_data_word_old
+    #test_x_word_old  = test_data_word_old
+    # 
+    ## Word(cur)
+    #train_x_word_cur = train_data_word_cur
+    #dev_x_word_cur   = dev_data_word_cur
+    #test_x_word_cur  = test_data_word_cur
+    #
+
+    #train_y = train_data_tag
+    #dev_y   = dev_data_tag
+    #test_y  = test_data_tag
+    
+    train_number = 40000
+    dev_number = 10000
+	# Char
+    train_x_char = train_data_char[:train_number]
+    dev_x_char   = dev_data_char[:dev_number]
     test_x_char  = test_data_char
     
     # Pos
-    train_x_pos = train_data_pos
-    dev_x_pos   = dev_data_pos
+    train_x_pos = train_data_pos[:train_number]
+    dev_x_pos   = dev_data_pos[:dev_number]
     test_x_pos  = test_data_pos
     
     # Word(old)
-    train_x_word_old = train_data_word_old
-    dev_x_word_old   = dev_data_word_old
+    train_x_word_old = train_data_word_old[:train_number]
+    dev_x_word_old   = dev_data_word_old[:dev_number]
     test_x_word_old  = test_data_word_old
      
     # Word(cur)
-    train_x_word_cur = train_data_word_cur
-    dev_x_word_cur   = dev_data_word_cur
+    train_x_word_cur = train_data_word_cur[:train_number]
+    dev_x_word_cur   = dev_data_word_cur[:dev_number]
     test_x_word_cur  = test_data_word_cur
     
 
-    train_y = train_data_tag
-    dev_y   = dev_data_tag
+    train_y = train_data_tag[:train_number]
+    dev_y   = dev_data_tag[:dev_number]
     test_y  = test_data_tag
     
-    # Steps
+	# Steps
     train_steps = math.ceil(train_x_char.shape[0] / FLAGS.train_batch_size)
     dev_steps = math.ceil(dev_x_char.shape[0] / FLAGS.dev_batch_size)
     test_steps = math.ceil(test_x_char.shape[0] / FLAGS.test_batch_size)
@@ -311,16 +338,28 @@ def do():
         test_y_ = test_y.tolist()
         Y_true = id2tag[ list( chain( *test_y_ ))].tolist()
         
-        print(classification_report(Y_true, Y_pred))
+        #print(classification_report(Y_true, Y_pred))
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='BI LSTM')
+	
+    DATA_TAG = True
+
+    if DATA_TAG == True:
+        DATASET_DIR = 'data/TOEFL_NEWS_16_18/'
+        MODEL_DIR = 'ckpt/TOEFL_NEWS_16_18/'
+        SUMMARY_DIR = 'summaries/TOEFL_NEWS_16_18'
+    else:
+        DATASET_DIR = 'data/16_18/'
+        MODEL_DIR = 'ckpt/16_18/'
+        SUMMARY_DIR = 'summaries/16_18'
+
     parser.add_argument('--train_batch_size', help='train batch size', default=256)
     parser.add_argument('--dev_batch_size', help='dev batch size', default=64)
     parser.add_argument('--test_batch_size', help='test batch size', default=256)
-    parser.add_argument('--dict_path', help='dict path', default='data/dict.pkl')
-    parser.add_argument('--data_path', help='data path', default='data/data.pkl')
+    parser.add_argument('--dict_path', help='dict path', default=DATASET_DIR+'dict.pkl')
+    parser.add_argument('--data_path', help='data path', default=DATASET_DIR+'data.pkl')
     parser.add_argument('--num_layer', help='num of layer', default=1, type=int)
     parser.add_argument('--num_units', help='num of units', default=128, type=int)
     parser.add_argument('--time_step', help='time steps', default=200, type=int)
@@ -336,9 +375,9 @@ if __name__ == '__main__':
     parser.add_argument('--steps_per_print', help='steps per print', default=10, type=int)
     parser.add_argument('--steps_per_summary', help='steps per summary', default=5, type=int)
     parser.add_argument('--keep_prob', help='train keep prob dropout', default=0.5, type=float)
-    parser.add_argument('--checkpoint_dir', help='checkpoint dir', default='ckpt/model.ckpt', type=str)
-    parser.add_argument('--summaries_dir', help='summaries dir', default='summaries/', type=str)
-    parser.add_argument('--train', help='train', default=False, type=bool)
+    parser.add_argument('--checkpoint_dir', help='checkpoint dir', default=MODEL_DIR+'model.ckpt', type=str)
+    parser.add_argument('--summaries_dir', help='summaries dir', default=SUMMARY_DIR, type=str)
+    parser.add_argument('--train', help='train', default=True, type=bool)
     
     FLAGS, args = parser.parse_known_args()
     
