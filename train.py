@@ -123,9 +123,10 @@ def do():
     #dev_y   = dev_data_tag
     #test_y  = test_data_tag
     
-    train_number = 40000
+    train_number = 60000
     dev_number = 10000
-	# Char
+    
+    # Char
     train_x_char = train_data_char[:train_number]
     dev_x_char   = dev_data_char[:dev_number]
     test_x_char  = test_data_char
@@ -264,9 +265,14 @@ def do():
     # Global step
     gstep = 0
     
+    # Global step for dev
+    gstep_ = 0
+
     # Summaries
     summaries = tf.summary.merge_all()
-    writer = tf.summary.FileWriter(FLAGS.summaries_dir,sess.graph)
+    writer = tf.summary.FileWriter(FLAGS.summaries_dir+'train/', sess.graph)
+    dev_writer = tf.summary.FileWriter(FLAGS.summaries_dir+'dev/',)
+
     if FLAGS.train:
         
         #if tf.gfile.Exists(FLAGS.summaries_dir):
@@ -279,32 +285,46 @@ def do():
             for step in range(int(train_steps)):
                 smrs, loss, acc, gstep, _ = sess.run([summaries, cross_entropy, accuracy, global_step, train],feed_dict={keep_prob: FLAGS.keep_prob})
                 
-                # Print log
-                if step % FLAGS.steps_per_print == 0:
-                    print('Global Step', gstep, 'Step', step, 'Train Loss', loss, 'Accuracy', acc)
+                print('Global Step', gstep, 'Train Loss', loss, 'Accuracy', acc)
                 
                 # Summaries for tensorboard
                 if gstep % FLAGS.steps_per_summary == 0:
                     if not os.path.exists(FLAGS.summaries_dir):
                         os.mkdir(FLAGS.summaries_dir)
                     writer.add_summary(smrs, gstep)
-                    print('Write summaries to', FLAGS.summaries_dir)
             
-            if epoch % FLAGS.epochs_per_dev == 0:
-                # Dev
-                sess.run(dev_initializer)
+            sess.run(dev_initializer)
+            loss_ = []
+            acc_ =  []
+            for step in range(int(dev_steps)):
+                smrs, loss, acc = sess.run([summaries, cross_entropy, accuracy],feed_dict={keep_prob: 1})
+                loss_.append(loss)
+                acc_.append(acc)
+            avg_loss = sum(loss_) / len(loss_)
+            avg_acc = sum(acc_) / len(acc_)
+            print('Global Step', gstep_, 'Dev Loss', avg_loss, 'Accuracy', avg_acc)
                 
-                Y_pred = []
-                Y_true = []
-                
-                for step in range(int(dev_steps)):
-                    y_predict_results, acc = sess.run([y_predict, accuracy], feed_dict={keep_prob: 1})
-                    Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
-                    #print('Dev Accuracy', sess.run(accuracy, feed_dict={keep_prob: 1}), 'Step', step)
-                # Y_true 
-                dev_y_ = dev_y.tolist()
-                Y_true = id2tag[ list( chain( *dev_y_ ))].tolist()
-                print(classification_report(Y_true, Y_pred))
+            if not os.path.exists(FLAGS.summaries_dir):
+                    os.mkdir(FLAGS.summaries_dir)
+            dev_writer.add_summary(smrs, gstep_)
+            gstep_ += 1
+            
+            
+            #if epoch % FLAGS.epochs_per_dev == 0:
+            #    # Dev
+            #    sess.run(dev_initializer)
+            #    
+            #    Y_pred = []
+            #    Y_true = []
+            #    
+            #    for step in range(int(dev_steps)):
+            #        y_predict_results, acc = sess.run([y_predict, accuracy], feed_dict={keep_prob: 1})
+            #        Y_pred.extend( id2tag[y_predict_results.tolist()].tolist() )
+            #        #print('Dev Accuracy', sess.run(accuracy, feed_dict={keep_prob: 1}), 'Step', step)
+            #    # Y_true 
+            #    dev_y_ = dev_y.tolist()
+            #    Y_true = id2tag[ list( chain( *dev_y_ ))].tolist()
+            #    print(classification_report(Y_true, Y_pred))
             
             # Save model
             if epoch % FLAGS.epochs_per_save == 0:
@@ -349,11 +369,11 @@ if __name__ == '__main__':
     if DATA_TAG == True:
         DATASET_DIR = 'data/TOEFL_NEWS_16_18/'
         MODEL_DIR = 'ckpt/TOEFL_NEWS_16_18/'
-        SUMMARY_DIR = 'summaries/TOEFL_NEWS_16_18'
+        SUMMARY_DIR = 'summaries/TOEFL_NEWS_16_18/'
     else:
         DATASET_DIR = 'data/16_18/'
         MODEL_DIR = 'ckpt/16_18/'
-        SUMMARY_DIR = 'summaries/16_18'
+        SUMMARY_DIR = 'summaries/16_18/'
 
     parser.add_argument('--train_batch_size', help='train batch size', default=256)
     parser.add_argument('--dev_batch_size', help='dev batch size', default=64)
