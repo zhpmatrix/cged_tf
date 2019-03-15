@@ -24,4 +24,6 @@
 
 [中文拼写纠错](https://zhpmatrix.github.io/2018/12/17/chinese-spell-checker/)，这篇博客简单的梳理了围绕该课题做的相关工作。
 
+[复现论文地址](https://pdfs.semanticscholar.org/c1d3/954b4b1951c8584d7feab94115b4816b577f.pdf?_ga=2.257663115.1623131418.1552658691-1526348929.1541338252)
+
 
